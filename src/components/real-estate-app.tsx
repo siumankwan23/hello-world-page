@@ -432,30 +432,6 @@ export function RealEstateApp() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg shadow-slate-200/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" /> Matching listings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {listings.slice(0, 2).map((listing) => (
-                    <div key={listing.address} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-medium">{listing.address}</p>
-                          <p className="text-sm text-slate-500">{listing.city}</p>
-                        </div>
-                        <Badge>{listing.status}</Badge>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
-                        <span>{listing.price}</span>
-                        <span>{listing.clientStatus}</span>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
           </div>
           </section>
 
@@ -465,36 +441,86 @@ export function RealEstateApp() {
                 <MapPin className="h-5 w-5" /> Properties
               </CardTitle>
               <p className="mt-1 text-sm text-slate-500">
-                Both the client and agent can add properties to track. Each property includes a note.
+                Both the client and agent can add properties to track. Each property includes a note and can be edited or deleted.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-800">
+                    {editingId ? "Edit property" : "Add a property"}
+                  </p>
+                  {editingId ? (
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={resetForm}>
+                      <X className="h-4 w-4" /> Cancel
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div>
                     <p className="text-sm font-medium text-slate-700">Property address</p>
                     <Input
                       placeholder="123 Ocean Blvd, Newport Beach"
-                      value={newAddress}
-                      onChange={(event) => setNewAddress(event.target.value)}
+                      value={form.address}
+                      onChange={(event) => updateField("address", event.target.value)}
                     />
                   </div>
                   <div>
+                    <p className="text-sm font-medium text-slate-700">Listing URL</p>
+                    <Input
+                      placeholder="https://..."
+                      value={form.url}
+                      onChange={(event) => updateField("url", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Price</p>
+                    <Input
+                      placeholder="$850,000"
+                      value={form.price}
+                      onChange={(event) => updateField("price", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Square feet</p>
+                    <Input
+                      placeholder="1,850"
+                      value={form.squareFeet}
+                      onChange={(event) => updateField("squareFeet", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Bedrooms</p>
+                    <Input
+                      placeholder="3"
+                      value={form.bedrooms}
+                      onChange={(event) => updateField("bedrooms", event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Bathrooms</p>
+                    <Input
+                      placeholder="2"
+                      value={form.bathrooms}
+                      onChange={(event) => updateField("bathrooms", event.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <p className="text-sm font-medium text-slate-700">Added by</p>
                     <div className="flex gap-2">
                       <Button
                         type="button"
-                        variant={newAddedBy === "agent" ? "default" : "outline"}
+                        variant={form.addedBy === "agent" ? "default" : "outline"}
                         className="flex-1"
-                        onClick={() => setNewAddedBy("agent")}
+                        onClick={() => updateField("addedBy", "agent")}
                       >
                         Agent
                       </Button>
                       <Button
                         type="button"
-                        variant={newAddedBy === "client" ? "default" : "outline"}
+                        variant={form.addedBy === "client" ? "default" : "outline"}
                         className="flex-1"
-                        onClick={() => setNewAddedBy("client")}
+                        onClick={() => updateField("addedBy", "client")}
                       >
                         Client
                       </Button>
@@ -507,13 +533,13 @@ export function RealEstateApp() {
                     className="mt-1 w-full rounded-md border border-slate-200 bg-white p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     rows={3}
                     placeholder="Why this property? Anything to remember..."
-                    value={newNote}
-                    onChange={(event) => setNewNote(event.target.value)}
+                    value={form.note}
+                    onChange={(event) => updateField("note", event.target.value)}
                   />
                 </div>
                 {propertyError ? <p className="mt-2 text-sm text-red-600">{propertyError}</p> : null}
-                <Button className="mt-3 gap-2" onClick={handleAddProperty}>
-                  <Plus className="h-4 w-4" /> Add property
+                <Button className="mt-3 gap-2" onClick={handleSubmitProperty}>
+                  <Plus className="h-4 w-4" /> {editingId ? "Save changes" : "Add property"}
                 </Button>
               </div>
 
@@ -523,20 +549,63 @@ export function RealEstateApp() {
                 ) : (
                   (propertiesByClient[selectedClient.id] ?? []).map((property) => (
                     <div key={property.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-semibold text-slate-900">{property.address}</p>
-                        <Badge variant={property.addedBy === "agent" ? "default" : "secondary"}>
-                          Added by {property.addedBy}
-                        </Badge>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-900">{property.address}</p>
+                          {property.url ? (
+                            <a
+                              href={property.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 inline-flex items-center gap-1 text-xs text-cyan-700 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> View listing
+                            </a>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={property.addedBy === "agent" ? "default" : "secondary"}>
+                            Added by {property.addedBy}
+                          </Badge>
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => handleEditProperty(property)}>
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </Button>
+                          <Button size="sm" variant="outline" className="gap-1 text-red-600" onClick={() => handleDeleteProperty(property.id)}>
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </Button>
+                        </div>
                       </div>
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{property.note}</p>
-                      <p className="mt-2 text-xs text-slate-400">{property.addedAt}</p>
+                      <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-4">
+                        <div>
+                          <p className="text-xs text-slate-400">Price</p>
+                          <p className="font-medium">{property.price || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Beds</p>
+                          <p className="font-medium">{property.bedrooms || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Baths</p>
+                          <p className="font-medium">{property.bathrooms || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Sq ft</p>
+                          <p className="font-medium">{property.squareFeet || "—"}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">{property.note}</p>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                        <span>Added {property.addedAt}</span>
+                        <span>Last updated {property.updatedAt}</span>
+                      </div>
                     </div>
                   ))
                 )}
               </div>
             </CardContent>
           </Card>
+
+
 
         </main>
       ) : (
