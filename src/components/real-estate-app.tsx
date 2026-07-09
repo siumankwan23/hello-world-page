@@ -381,8 +381,88 @@ export function RealEstateApp() {
                   ))}
                 </CardContent>
               </Card>
-            </div>
+          </div>
           </section>
+
+          <Card className="border-0 shadow-lg shadow-slate-200/70">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" /> Properties
+              </CardTitle>
+              <p className="mt-1 text-sm text-slate-500">
+                Both the client and agent can add properties to track. Each property includes a note.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Property address</p>
+                    <Input
+                      placeholder="123 Ocean Blvd, Newport Beach"
+                      value={newAddress}
+                      onChange={(event) => setNewAddress(event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Added by</p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={newAddedBy === "agent" ? "default" : "outline"}
+                        className="flex-1"
+                        onClick={() => setNewAddedBy("agent")}
+                      >
+                        Agent
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={newAddedBy === "client" ? "default" : "outline"}
+                        className="flex-1"
+                        onClick={() => setNewAddedBy("client")}
+                      >
+                        Client
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm font-medium text-slate-700">Note</p>
+                  <textarea
+                    className="mt-1 w-full rounded-md border border-slate-200 bg-white p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    rows={3}
+                    placeholder="Why this property? Anything to remember..."
+                    value={newNote}
+                    onChange={(event) => setNewNote(event.target.value)}
+                  />
+                </div>
+                {propertyError ? <p className="mt-2 text-sm text-red-600">{propertyError}</p> : null}
+                <Button className="mt-3 gap-2" onClick={handleAddProperty}>
+                  <Plus className="h-4 w-4" /> Add property
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {(propertiesByClient[selectedClient.id] ?? []).length === 0 ? (
+                  <p className="text-sm text-slate-500">No properties added yet.</p>
+                ) : (
+                  (propertiesByClient[selectedClient.id] ?? []).map((property) => (
+                    <div key={property.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold text-slate-900">{property.address}</p>
+                        <Badge variant={property.addedBy === "agent" ? "default" : "secondary"}>
+                          Added by {property.addedBy}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{property.note}</p>
+                      <p className="mt-2 text-xs text-slate-400">{property.addedAt}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
         </main>
       ) : (
         <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
