@@ -95,6 +95,37 @@ export function RealEstateApp() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [propertiesByClient, setPropertiesByClient] = useState<Record<number, Property[]>>({});
+  const [newAddress, setNewAddress] = useState("");
+  const [newNote, setNewNote] = useState("");
+  const [newAddedBy, setNewAddedBy] = useState<"client" | "agent">("agent");
+  const [propertyError, setPropertyError] = useState("");
+
+  const handleAddProperty = () => {
+    if (selectedClientId == null) return;
+    if (!newAddress.trim()) {
+      setPropertyError("Please enter a property address.");
+      return;
+    }
+    if (!newNote.trim()) {
+      setPropertyError("Please add a note for this property.");
+      return;
+    }
+    const property: Property = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      address: newAddress.trim(),
+      note: newNote.trim(),
+      addedBy: newAddedBy,
+      addedAt: new Date().toLocaleString(),
+    };
+    setPropertiesByClient((prev) => ({
+      ...prev,
+      [selectedClientId]: [property, ...(prev[selectedClientId] ?? [])],
+    }));
+    setNewAddress("");
+    setNewNote("");
+    setPropertyError("");
+  };
 
   const filteredClients = useMemo(() => {
     const q = query.trim().toLowerCase();
