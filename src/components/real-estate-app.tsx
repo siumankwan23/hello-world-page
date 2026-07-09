@@ -105,15 +105,15 @@ export function RealEstateApp() {
           <Card className="border-0 shadow-lg shadow-slate-200/70">
             <CardContent className="p-8">
               <div className="flex items-center gap-2 text-sm font-medium text-cyan-700">
-                <Sparkles className="h-4 w-4" /> Secure, role-aware client management
+                <Sparkles className="h-4 w-4" /> Built for individual agents
               </div>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Manage buyers, searches, and listings from one calm workspace.
+                Sign up as an individual agent and manage your own clients, searches, and listings.
               </h1>
               <p className="mt-4 max-w-2xl text-lg text-slate-600">
-                This experience is built for global admins, agents, and clients with permissions,
-                activity history, notifications, and polished dashboards that feel as good as they
-                work.
+                This experience is designed for solo agents who want a secure, polished workspace
+                to organize clients, track searches, manage listings, and stay on top of follow-up
+                activity from one place.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button className="gap-2">
@@ -132,16 +132,16 @@ export function RealEstateApp() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-600">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="font-semibold text-slate-900">Role-based access</p>
-                <p className="mt-1">Admins, agents, and clients each see only the records they should.</p>
+                <p className="font-semibold text-slate-900">Personal agent workspace</p>
+                <p className="mt-1">Each agent gets their own dashboard for managing clients, searches, and listings independently.</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="font-semibold text-slate-900">Supabase-ready</p>
-                <p className="mt-1">Configured for auth, database, storage, realtime, and RLS.</p>
+                <p className="mt-1">Configured for auth, database, storage, realtime, and RLS for a secure personal workflow.</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="font-semibold text-slate-900">Audit-friendly</p>
-                <p className="mt-1">Every key action can be logged for compliance and visibility.</p>
+                <p className="font-semibold text-slate-900">Client collaboration</p>
+                <p className="mt-1">Agents can keep client conversations, notes, and activity history organized in one place.</p>
               </div>
             </CardContent>
           </Card>
@@ -150,7 +150,10 @@ export function RealEstateApp() {
         <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <Card className="border-0 shadow-lg shadow-slate-200/70">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Agent dashboard</CardTitle>
+              <div>
+                <CardTitle>Agent client dashboard</CardTitle>
+                <p className="mt-1 text-sm text-slate-500">Each agent sees and manages their own assigned clients.</p>
+              </div>
               <Badge variant="outline">Live demo data</Badge>
             </CardHeader>
             <CardContent>
@@ -168,7 +171,7 @@ export function RealEstateApp() {
               </div>
               <div className="grid gap-3 md:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Total clients</p>
+                  <p className="text-sm text-slate-500">Assigned clients</p>
                   <p className="text-2xl font-semibold">24</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -176,7 +179,7 @@ export function RealEstateApp() {
                   <p className="text-2xl font-semibold">18</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Total listings</p>
+                  <p className="text-sm text-slate-500">Client listings</p>
                   <p className="text-2xl font-semibold">41</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
