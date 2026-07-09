@@ -10,9 +10,15 @@ import { Search, Home, Users, ListChecks, Sparkles, ShieldCheck, ArrowRight, Log
 type Property = {
   id: string;
   address: string;
+  url: string;
+  price: string;
+  bedrooms: string;
+  bathrooms: string;
+  squareFeet: string;
   note: string;
   addedBy: "client" | "agent";
   addedAt: string;
+  updatedAt: string;
 };
 
 
