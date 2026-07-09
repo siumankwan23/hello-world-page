@@ -382,7 +382,7 @@ export function RealEstateApp() {
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm text-slate-500">Active items</p>
-                    <p className="font-medium">{selectedClient.searches} searches • {selectedClient.listings} listings</p>
+                    <p className="font-medium">{(propertiesByClient[selectedClient.id] ?? []).length} properties</p>
                   </div>
                 </div>
                 <Separator className="my-4" />
