@@ -102,36 +102,105 @@ export function RealEstateApp() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [propertiesByClient, setPropertiesByClient] = useState<Record<number, Property[]>>({});
-  const [newAddress, setNewAddress] = useState("");
-  const [newNote, setNewNote] = useState("");
-  const [newAddedBy, setNewAddedBy] = useState<"client" | "agent">("agent");
+  const emptyForm = {
+    address: "",
+    url: "",
+    price: "",
+    bedrooms: "",
+    bathrooms: "",
+    squareFeet: "",
+    note: "",
+    addedBy: "agent" as "agent" | "client",
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [propertyError, setPropertyError] = useState("");
 
-  const handleAddProperty = () => {
+  const updateField = <K extends keyof typeof emptyForm>(key: K, value: (typeof emptyForm)[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setPropertyError("");
+  };
+
+  const handleSubmitProperty = () => {
     if (selectedClientId == null) return;
-    if (!newAddress.trim()) {
+    if (!form.address.trim()) {
       setPropertyError("Please enter a property address.");
       return;
     }
-    if (!newNote.trim()) {
+    if (!form.note.trim()) {
       setPropertyError("Please add a note for this property.");
       return;
     }
-    const property: Property = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      address: newAddress.trim(),
-      note: newNote.trim(),
-      addedBy: newAddedBy,
-      addedAt: new Date().toLocaleString(),
-    };
-    setPropertiesByClient((prev) => ({
-      ...prev,
-      [selectedClientId]: [property, ...(prev[selectedClientId] ?? [])],
-    }));
-    setNewAddress("");
-    setNewNote("");
+    const now = new Date().toLocaleString();
+    setPropertiesByClient((prev) => {
+      const list = prev[selectedClientId] ?? [];
+      if (editingId) {
+        return {
+          ...prev,
+          [selectedClientId]: list.map((p) =>
+            p.id === editingId
+              ? {
+                  ...p,
+                  address: form.address.trim(),
+                  url: form.url.trim(),
+                  price: form.price.trim(),
+                  bedrooms: form.bedrooms.trim(),
+                  bathrooms: form.bathrooms.trim(),
+                  squareFeet: form.squareFeet.trim(),
+                  note: form.note.trim(),
+                  addedBy: form.addedBy,
+                  updatedAt: now,
+                }
+              : p,
+          ),
+        };
+      }
+      const property: Property = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        address: form.address.trim(),
+        url: form.url.trim(),
+        price: form.price.trim(),
+        bedrooms: form.bedrooms.trim(),
+        bathrooms: form.bathrooms.trim(),
+        squareFeet: form.squareFeet.trim(),
+        note: form.note.trim(),
+        addedBy: form.addedBy,
+        addedAt: now,
+        updatedAt: now,
+      };
+      return { ...prev, [selectedClientId]: [property, ...list] };
+    });
+    resetForm();
+  };
+
+  const handleEditProperty = (property: Property) => {
+    setEditingId(property.id);
+    setForm({
+      address: property.address,
+      url: property.url,
+      price: property.price,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      squareFeet: property.squareFeet,
+      note: property.note,
+      addedBy: property.addedBy,
+    });
     setPropertyError("");
   };
+
+  const handleDeleteProperty = (id: string) => {
+    if (selectedClientId == null) return;
+    setPropertiesByClient((prev) => ({
+      ...prev,
+      [selectedClientId]: (prev[selectedClientId] ?? []).filter((p) => p.id !== id),
+    }));
+    if (editingId === id) resetForm();
+  };
+
 
   const filteredClients = useMemo(() => {
     const q = query.trim().toLowerCase();
