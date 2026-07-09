@@ -5,7 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { Search, Home, Users, ListChecks, Sparkles, ShieldCheck, ArrowRight, LogOut, UserPlus, KeyRound, ArrowLeft } from "lucide-react";
+import { Search, Home, Users, ListChecks, Sparkles, ShieldCheck, ArrowRight, LogOut, UserPlus, KeyRound, ArrowLeft, Plus, MapPin } from "lucide-react";
+
+type Property = {
+  id: string;
+  address: string;
+  note: string;
+  addedBy: "client" | "agent";
+  addedAt: string;
+};
+
 
 type Client = {
   id: number;
