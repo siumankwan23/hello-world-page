@@ -405,26 +405,6 @@ export function RealEstateApp() {
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <Card className="border-0 shadow-lg shadow-slate-200/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ListChecks className="h-5 w-5" /> Client activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="font-medium">Listing review</p>
-                    <p className="text-sm text-slate-500">Viewed 3 homes this week</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="font-medium">Next touchpoint</p>
-                    <p className="text-sm text-slate-500">Call scheduled for tomorrow afternoon</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-          </div>
           </section>
 
           <Card className="border-0 shadow-lg shadow-slate-200/70">
@@ -657,8 +637,7 @@ export function RealEstateApp() {
                           <p className="text-sm text-slate-500">{client.email}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary">{client.searches} searches</Badge>
-                          <Badge>{client.listings} listings</Badge>
+                          <Badge variant="secondary">{(propertiesByClient[client.id] ?? []).length} properties</Badge>
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
