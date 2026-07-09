@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Northstar Realty" },
+      { name: "description", content: "A secure real estate agent and client listing management platform." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Northstar Realty" },
+      { property: "og:description", content: "A secure real estate agent and client listing management platform." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Northstar Realty" },
+      { name: "twitter:description", content: "A secure real estate agent and client listing management platform." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/77adff07-ff9a-4069-aef7-42ab27a18ecc/id-preview-36a35fc7--8464a03e-f0da-41b9-aa51-eb8871f2bf8b.lovable.app-1783585032453.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/77adff07-ff9a-4069-aef7-42ab27a18ecc/id-preview-36a35fc7--8464a03e-f0da-41b9-aa51-eb8871f2bf8b.lovable.app-1783585032453.png" },
     ],
     links: [
       {
