@@ -27,8 +27,6 @@ type Client = {
   name: string;
   email: string;
   phone: string;
-  searches: number;
-  listings: number;
   updated: string;
 };
 
@@ -38,8 +36,6 @@ const clients: Client[] = [
     name: "Maya Chen",
     email: "maya@example.com",
     phone: "(714) 555-0148",
-    searches: 3,
-    listings: 5,
     updated: "2h ago",
   },
   {
@@ -47,8 +43,6 @@ const clients: Client[] = [
     name: "Jordan Alvarez",
     email: "jordan@example.com",
     phone: "(562) 555-0192",
-    searches: 2,
-    listings: 4,
     updated: "Today",
   },
   {
@@ -56,8 +50,6 @@ const clients: Client[] = [
     name: "Priya Singh",
     email: "priya@example.com",
     phone: "(949) 555-0104",
-    searches: 4,
-    listings: 7,
     updated: "Yesterday",
   },
 ];
