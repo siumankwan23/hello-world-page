@@ -88,7 +88,7 @@ function AcceptInvite() {
     try {
       const { error: updErr } = await supabase.auth.updateUser({ password });
       if (updErr) throw updErr;
-      await activate({});
+      await activate();
       setStatus("done");
       setTimeout(() => navigate({ to: "/dashboard", replace: true }), 800);
     } catch (e: any) {
