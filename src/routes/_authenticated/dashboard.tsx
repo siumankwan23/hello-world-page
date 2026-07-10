@@ -10,6 +10,16 @@ import {
   deleteClient as deleteClientFn,
   getMyContext,
 } from "@/lib/clients.functions";
+import {
+  listSearches,
+  createSearch,
+  updateSearch,
+  deleteSearch,
+  listListings,
+  createListing,
+  updateListing,
+  deleteListing,
+} from "@/lib/listings.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +43,10 @@ import {
   Mail,
   Phone,
   UserCircle2,
+  MapPin,
 } from "lucide-react";
+import { ListingsTableView } from "@/components/listings-view";
+import { ListingFormDialog } from "@/components/listing-form-dialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -308,8 +321,98 @@ function ClientDetail({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const listSearchesFn = useServerFn(listSearches);
+  const createSearchFn = useServerFn(createSearch);
+  const updateSearchFn = useServerFn(updateSearch);
+  const deleteSearchFn = useServerFn(deleteSearch);
+  const listListingsFn = useServerFn(listListings);
+  const createListingFn = useServerFn(createListing);
+  const updateListingFn = useServerFn(updateListing);
+  const deleteListingFn = useServerFn(deleteListing);
+
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [listingDialogOpen, setListingDialogOpen] = useState(false);
+  const [editingSearch, setEditingSearch] = useState<any>(null);
+  const [editingListing, setEditingListing] = useState<any>(null);
+  const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null);
+  const [newSearchName, setNewSearchName] = useState("");
+
+  const searchesQuery = useQuery({
+    queryKey: ["searches", client.id],
+    queryFn: () => listSearchesFn() as Promise<any[]>,
+    select: (data) => data.filter((s) => s.client_id === client.id),
+  });
+
+  const listingsQuery = useQuery({
+    queryKey: ["listings", client.id],
+    queryFn: () => listListingsFn() as Promise<any[]>,
+  });
+
+  const createSearchMut = useMutation({
+    mutationFn: (name: string) =>
+      createSearchFn({ data: { client_id: client.id, name } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["searches", client.id] });
+      setSearchDialogOpen(false);
+      setNewSearchName("");
+    },
+  });
+
+  const updateSearchMut = useMutation({
+    mutationFn: (data: any) => updateSearchFn({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["searches", client.id] });
+      setEditingSearch(null);
+    },
+  });
+
+  const deleteSearchMut = useMutation({
+    mutationFn: (id: string) => deleteSearchFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["searches", client.id] });
+      setSelectedSearchId(null);
+    },
+  });
+
+  const createListingMut = useMutation({
+    mutationFn: (data: any) => createListingFn({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings", client.id] });
+      setListingDialogOpen(false);
+      setEditingListing(null);
+    },
+  });
+
+  const updateListingMut = useMutation({
+    mutationFn: (data: any) => updateListingFn({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings", client.id] });
+      setListingDialogOpen(false);
+      setEditingListing(null);
+    },
+  });
+
+  const deleteListingMut = useMutation({
+    mutationFn: (id: string) => deleteListingFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings", client.id] });
+    },
+  });
+
+  const searches = searchesQuery.data ?? [];
+  const currentSearchListings = useMemo(
+    () =>
+      listingsQuery.data?.filter(
+        (l) => selectedSearchId && l.search_id === selectedSearchId,
+      ) ?? [],
+    [listingsQuery.data, selectedSearchId],
+  );
+
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8 lg:px-8">
+    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" className="gap-2" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> Back to clients
@@ -324,6 +427,7 @@ function ClientDetail({
         </div>
       </div>
 
+      {/* Client Information */}
       <Card className="border-0 shadow-lg shadow-slate-200/70">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -363,6 +467,137 @@ function ClientDetail({
           )}
         </CardContent>
       </Card>
+
+      {/* Searches Section */}
+      <Card className="border-0 shadow-lg shadow-slate-200/70">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Property Searches</CardTitle>
+            <p className="mt-1 text-sm text-slate-500">Organize property searches for this client.</p>
+          </div>
+          <Button className="gap-2" onClick={() => setSearchDialogOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Search
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {searchesQuery.isLoading ? (
+            <p className="text-sm text-slate-500">Loading searches...</p>
+          ) : searches.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+              <p className="text-slate-600">No searches yet. Create your first search.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {searches.map((search) => (
+                <button
+                  key={search.id}
+                  onClick={() => setSelectedSearchId(search.id)}
+                  className={`rounded-xl border-2 p-4 text-left transition ${
+                    selectedSearchId === search.id
+                      ? "border-cyan-500 bg-cyan-50"
+                      : "border-slate-200 hover:border-cyan-300"
+                  }`}
+                >
+                  <p className="font-semibold text-slate-900">{search.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {search.listings_aggregate?.count ?? 0} listings
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Listings Section */}
+      {selectedSearchId && (
+        <Card className="border-0 shadow-lg shadow-slate-200/70">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Listings</CardTitle>
+              <p className="mt-1 text-sm text-slate-500">
+                {searches.find((s) => s.id === selectedSearchId)?.name}
+              </p>
+            </div>
+            <Button className="gap-2" onClick={() => setListingDialogOpen(true)}>
+              <Plus className="h-4 w-4" /> Add Listing
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ListingsTableView
+              listings={currentSearchListings}
+              onEdit={(listing) => {
+                setEditingListing(listing);
+                setListingDialogOpen(true);
+              }}
+              onDelete={(id) => {
+                if (confirm("Delete this listing?")) {
+                  deleteListingMut.mutate(id);
+                }
+              }}
+              onSelectListing={(listing) => {
+                navigate({ to: `/listings/${listing.id}` });
+              }}
+              isLoading={listingsQuery.isLoading}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Search Dialog */}
+      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a New Search</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-700">Search Name *</p>
+              <Input
+                placeholder="e.g., Downtown Condos, Family Homes"
+                value={newSearchName}
+                onChange={(e) => setNewSearchName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSearchDialogOpen(false)}
+              disabled={createSearchMut.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createSearchMut.mutate(newSearchName)}
+              disabled={!newSearchName.trim() || createSearchMut.isPending}
+            >
+              Create Search
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Listing Dialog */}
+      <ListingFormDialog
+        open={listingDialogOpen}
+        onOpenChange={setListingDialogOpen}
+        searchId={selectedSearchId || ""}
+        editing={editingListing}
+        onSubmit={async (data) => {
+          if (editingListing) {
+            await updateListingMut.mutateAsync(data);
+          } else {
+            await createListingMut.mutateAsync(data);
+          }
+        }}
+        isSubmitting={createListingMut.isPending || updateListingMut.isPending}
+        error={
+          (createListingMut.error as Error | null)?.message ||
+          (updateListingMut.error as Error | null)?.message ||
+          null
+        }
+      />
     </main>
   );
 }
@@ -448,10 +683,73 @@ function ClientFormDialog({
 /* ------------------------ CLIENT VIEW ------------------------ */
 
 function ClientView({ ctx }: { ctx: any }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { clientRecord, agent, profile } = ctx;
 
+  const listSearchesFn = useServerFn(listSearches);
+  const createSearchFn = useServerFn(createSearch);
+  const deleteSearchFn = useServerFn(deleteSearch);
+  const listListingsFn = useServerFn(listListings);
+  const createListingFn = useServerFn(createListing);
+  const deleteListingFn = useServerFn(deleteListing);
+
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [listingDialogOpen, setListingDialogOpen] = useState(false);
+  const [editingListing, setEditingListing] = useState<any>(null);
+  const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null);
+  const [newSearchName, setNewSearchName] = useState("");
+
+  const searchesQuery = useQuery({
+    queryKey: ["searches", clientRecord?.id],
+    queryFn: () => listSearchesFn() as Promise<any[]>,
+    enabled: !!clientRecord?.id,
+  });
+
+  const listingsQuery = useQuery({
+    queryKey: ["listings", clientRecord?.id],
+    queryFn: () => listListingsFn() as Promise<any[]>,
+    enabled: !!clientRecord?.id,
+  });
+
+  const createSearchMut = useMutation({
+    mutationFn: (name: string) =>
+      createSearchFn({ data: { client_id: clientRecord?.id, name } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["searches", clientRecord?.id] });
+      setSearchDialogOpen(false);
+      setNewSearchName("");
+    },
+  });
+
+  const createListingMut = useMutation({
+    mutationFn: (data: any) => createListingFn({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings", clientRecord?.id] });
+      setListingDialogOpen(false);
+      setEditingListing(null);
+    },
+  });
+
+  const deleteListingMut = useMutation({
+    mutationFn: (id: string) => deleteListingFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings", clientRecord?.id] });
+    },
+  });
+
+  const searches = searchesQuery.data ?? [];
+  const currentSearchListings = useMemo(
+    () =>
+      listingsQuery.data?.filter(
+        (l) => selectedSearchId && l.search_id === selectedSearchId,
+      ) ?? [],
+    [listingsQuery.data, selectedSearchId],
+  );
+
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8 lg:px-8">
+    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
+      {/* Welcome Card */}
       <Card className="border-0 shadow-lg shadow-slate-200/70">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -481,6 +779,134 @@ function ClientView({ ctx }: { ctx: any }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Searches Section */}
+      <Card className="border-0 shadow-lg shadow-slate-200/70">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Your Property Searches</CardTitle>
+            <p className="mt-1 text-sm text-slate-500">Organize your property searches and favorites.</p>
+          </div>
+          <Button className="gap-2" onClick={() => setSearchDialogOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Search
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {searchesQuery.isLoading ? (
+            <p className="text-sm text-slate-500">Loading searches...</p>
+          ) : searches.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+              <p className="text-slate-600">No searches yet. Create your first search.</p>
+              <Button className="mt-4 gap-2" onClick={() => setSearchDialogOpen(true)}>
+                <Plus className="h-4 w-4" /> Add Search
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {searches.map((search) => (
+                <button
+                  key={search.id}
+                  onClick={() => setSelectedSearchId(search.id)}
+                  className={`rounded-xl border-2 p-4 text-left transition ${
+                    selectedSearchId === search.id
+                      ? "border-cyan-500 bg-cyan-50"
+                      : "border-slate-200 hover:border-cyan-300"
+                  }`}
+                >
+                  <p className="font-semibold text-slate-900">{search.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {search.listings_aggregate?.count ?? 0} listings
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Listings Section */}
+      {selectedSearchId && (
+        <Card className="border-0 shadow-lg shadow-slate-200/70">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Listings</CardTitle>
+              <p className="mt-1 text-sm text-slate-500">
+                {searches.find((s) => s.id === selectedSearchId)?.name}
+              </p>
+            </div>
+            <Button className="gap-2" onClick={() => setListingDialogOpen(true)}>
+              <Plus className="h-4 w-4" /> Add Listing
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ListingsTableView
+              listings={currentSearchListings}
+              onEdit={(listing) => {
+                setEditingListing(listing);
+                setListingDialogOpen(true);
+              }}
+              onDelete={(id) => {
+                if (confirm("Delete this listing?")) {
+                  deleteListingMut.mutate(id);
+                }
+              }}
+              onSelectListing={(listing) => {
+                navigate({ to: `/listings/${listing.id}` });
+              }}
+              isLoading={listingsQuery.isLoading}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Search Dialog */}
+      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a New Search</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-700">Search Name *</p>
+              <Input
+                placeholder="e.g., Downtown Condos, Family Homes"
+                value={newSearchName}
+                onChange={(e) => setNewSearchName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSearchDialogOpen(false)}
+              disabled={createSearchMut.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createSearchMut.mutate(newSearchName)}
+              disabled={!newSearchName.trim() || createSearchMut.isPending}
+            >
+              Create Search
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Listing Dialog */}
+      <ListingFormDialog
+        open={listingDialogOpen}
+        onOpenChange={setListingDialogOpen}
+        searchId={selectedSearchId || ""}
+        editing={editingListing}
+        onSubmit={async (data) => {
+          await createListingMut.mutateAsync(data);
+        }}
+        isSubmitting={createListingMut.isPending}
+        error={
+          (createListingMut.error as Error | null)?.message || null
+        }
+      />
     </main>
   );
 }
