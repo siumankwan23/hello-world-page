@@ -9,7 +9,7 @@ import { Home, ShieldCheck, Sparkles, ArrowRight, Users, KeyRound } from "lucide
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "123Northstar Realty" },
+      { title: "Northstar Realty" },
       { name: "description", content: "A secure real estate agent and client management platform." },
     ],
   }),
@@ -40,7 +40,7 @@ function Landing() {
               <Home className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-lg font-semibold">Northstar Realty</p>
+              <p className="text-lg font-semibold">123Northstar Realty</p>
               <p className="text-sm text-slate-500">Agent & client workspace</p>
             </div>
           </div>
