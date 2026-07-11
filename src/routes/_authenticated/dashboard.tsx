@@ -580,7 +580,18 @@ function PropertiesPanel({ clientId }: { clientId: string }) {
           setOpen(o);
           if (!o) setEditing(null);
         }}
-        editing={editing}
+        editing={
+          editing
+            ? {
+                ...editing,
+                photo_url: editing.photo_url ?? "",
+                url: editing.url ?? "",
+                notes: editing.notes ?? "",
+                lot_size: editing.lot_size,
+                year_built: editing.year_built,
+              }
+            : null
+        }
         onSubmit={async (values) => {
           if (editing) await updateMut.mutateAsync({ id: editing.id, values });
           else await createMut.mutateAsync(values);
