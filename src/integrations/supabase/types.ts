@@ -83,6 +83,86 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string
+          agent_id: string
+          bathrooms: number
+          bedrooms: number
+          city: string
+          client_id: string
+          client_status: string
+          created_at: string
+          id: string
+          listing_status: string
+          lot_size: number | null
+          notes: string | null
+          photo_url: string | null
+          price: number
+          property_type: string
+          square_feet: number
+          state: string
+          updated_at: string
+          url: string | null
+          year_built: number | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          agent_id: string
+          bathrooms?: number
+          bedrooms?: number
+          city: string
+          client_id: string
+          client_status?: string
+          created_at?: string
+          id?: string
+          listing_status?: string
+          lot_size?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          price?: number
+          property_type?: string
+          square_feet?: number
+          state: string
+          updated_at?: string
+          url?: string | null
+          year_built?: number | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          agent_id?: string
+          bathrooms?: number
+          bedrooms?: number
+          city?: string
+          client_id?: string
+          client_status?: string
+          created_at?: string
+          id?: string
+          listing_status?: string
+          lot_size?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          price?: number
+          property_type?: string
+          square_feet?: number
+          state?: string
+          updated_at?: string
+          url?: string | null
+          year_built?: number | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
