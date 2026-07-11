@@ -240,7 +240,7 @@ export function ListingsCardView({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {listings.map((listing) => (
         <Card
           key={listing.id}
@@ -248,7 +248,7 @@ export function ListingsCardView({
           onClick={() => onSelectListing(listing)}
         >
           {listing.photos && listing.photos.length > 0 ? (
-            <div className="relative h-48 overflow-hidden bg-slate-100">
+            <div className="relative h-32 overflow-hidden bg-slate-100">
               <img
                 src={listing.photos[0]}
                 alt={listing.address}
