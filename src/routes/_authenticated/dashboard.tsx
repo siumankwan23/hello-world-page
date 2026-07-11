@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,15 +11,15 @@ import {
   getMyContext,
 } from "@/lib/clients.functions";
 import {
-  listSearches,
-  createSearch,
-  updateSearch,
-  deleteSearch,
-  listListings,
-  createListing,
-  updateListing,
-  deleteListing,
-} from "@/lib/listings.functions";
+  listProperties,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+} from "@/lib/properties.functions";
+import {
+  PropertyFormDialog,
+  type PropertyFormValues,
+} from "@/components/property-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,9 +44,9 @@ import {
   Phone,
   UserCircle2,
   MapPin,
+  ExternalLink,
+  ImageIcon,
 } from "lucide-react";
-import { ListingsTableView } from "@/components/listings-view";
-import { ListingFormDialog } from "@/components/listing-form-dialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -66,6 +66,29 @@ type ClientRow = {
   status: "pending_invitation" | "active";
   invited_at: string;
   activated_at: string | null;
+  updated_at: string;
+  created_at: string;
+};
+
+type PropertyRow = {
+  id: string;
+  client_id: string;
+  photo_url: string | null;
+  url: string | null;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  square_feet: number;
+  lot_size: number | null;
+  property_type: string;
+  year_built: number | null;
+  listing_status: string;
+  client_status: string;
+  notes: string | null;
   updated_at: string;
   created_at: string;
 };
@@ -105,7 +128,11 @@ function DashboardPage() {
             <div>
               <p className="text-lg font-semibold">Northstar Realty</p>
               <p className="text-sm text-slate-500">
-                {ctx?.role === "agent" ? "Agent dashboard" : ctx?.role === "client" ? "Client dashboard" : "Dashboard"}
+                {ctx?.role === "agent"
+                  ? "Agent dashboard"
+                  : ctx?.role === "client"
+                    ? "Client dashboard"
+                    : "Dashboard"}
               </p>
             </div>
           </div>
@@ -157,10 +184,7 @@ function AgentView() {
   const createMut = useMutation({
     mutationFn: (data: { full_name: string; email: string; phone: string }) =>
       create({
-        data: {
-          ...data,
-          redirect_url: `${window.location.origin}/accept-invite`,
-        },
+        data: { ...data, redirect_url: `${window.location.origin}/accept-invite` },
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
   });
@@ -184,7 +208,9 @@ function AgentView() {
     const q = query.trim().toLowerCase();
     if (!q) return clients;
     return clients.filter((c) =>
-      [c.full_name, c.email, c.phone ?? ""].some((v) => v.toLowerCase().includes(q)),
+      [c.full_name, c.email, c.phone ?? ""].some((v) =>
+        v.toLowerCase().includes(q),
+      ),
     );
   }, [clients, query]);
 
@@ -194,18 +220,18 @@ function AgentView() {
     setEditing(null);
     setDialogOpen(true);
   };
-
   const openEdit = (c: ClientRow) => {
     setEditing(c);
     setDialogOpen(true);
   };
 
-  const handleSubmit = async (data: { full_name: string; email: string; phone: string }) => {
-    if (editing) {
-      await updateMut.mutateAsync({ id: editing.id, ...data });
-    } else {
-      await createMut.mutateAsync(data);
-    }
+  const handleSubmit = async (data: {
+    full_name: string;
+    email: string;
+    phone: string;
+  }) => {
+    if (editing) await updateMut.mutateAsync({ id: editing.id, ...data });
+    else await createMut.mutateAsync(data);
     setDialogOpen(false);
     setEditing(null);
   };
@@ -229,7 +255,9 @@ function AgentView() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Client dashboard</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">Manage your clients and their properties.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage your clients and their properties.
+            </p>
           </div>
           <Button className="gap-2" onClick={openCreate}>
             <Plus className="h-4 w-4" /> Add client
@@ -255,7 +283,9 @@ function AgentView() {
             <p className="text-sm text-slate-500">Loading clients...</p>
           ) : filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-              <p className="text-slate-600">No clients yet. Add your first client to get started.</p>
+              <p className="text-slate-600">
+                No clients yet. Add your first client to get started.
+              </p>
               <Button className="mt-4 gap-2" onClick={openCreate}>
                 <Plus className="h-4 w-4" /> Add client
               </Button>
@@ -277,7 +307,11 @@ function AgentView() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant={c.status === "active" ? "default" : "secondary"}
-                        className={c.status === "pending_invitation" ? "bg-amber-100 text-amber-800" : ""}
+                        className={
+                          c.status === "pending_invitation"
+                            ? "bg-amber-100 text-amber-800"
+                            : ""
+                        }
                       >
                         {c.status === "active" ? "Active" : "Pending invitation"}
                       </Badge>
@@ -321,96 +355,6 @@ function ClientDetail({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-
-  const listSearchesFn = useServerFn(listSearches);
-  const createSearchFn = useServerFn(createSearch);
-  const updateSearchFn = useServerFn(updateSearch);
-  const deleteSearchFn = useServerFn(deleteSearch);
-  const listListingsFn = useServerFn(listListings);
-  const createListingFn = useServerFn(createListing);
-  const updateListingFn = useServerFn(updateListing);
-  const deleteListingFn = useServerFn(deleteListing);
-
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
-  const [listingDialogOpen, setListingDialogOpen] = useState(false);
-  const [editingSearch, setEditingSearch] = useState<any>(null);
-  const [editingListing, setEditingListing] = useState<any>(null);
-  const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null);
-  const [newSearchName, setNewSearchName] = useState("");
-
-  const searchesQuery = useQuery({
-    queryKey: ["searches", client.id],
-    queryFn: () => listSearchesFn() as Promise<any[]>,
-    select: (data) => data.filter((s) => s.client_id === client.id),
-  });
-
-  const listingsQuery = useQuery({
-    queryKey: ["listings", client.id],
-    queryFn: () => listListingsFn() as Promise<any[]>,
-  });
-
-  const createSearchMut = useMutation({
-    mutationFn: (name: string) =>
-      createSearchFn({ data: { client_id: client.id, name } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["searches", client.id] });
-      setSearchDialogOpen(false);
-      setNewSearchName("");
-    },
-  });
-
-  const updateSearchMut = useMutation({
-    mutationFn: (data: any) => updateSearchFn({ data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["searches", client.id] });
-      setEditingSearch(null);
-    },
-  });
-
-  const deleteSearchMut = useMutation({
-    mutationFn: (id: string) => deleteSearchFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["searches", client.id] });
-      setSelectedSearchId(null);
-    },
-  });
-
-  const createListingMut = useMutation({
-    mutationFn: (data: any) => createListingFn({ data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["listings", client.id] });
-      setListingDialogOpen(false);
-      setEditingListing(null);
-    },
-  });
-
-  const updateListingMut = useMutation({
-    mutationFn: (data: any) => updateListingFn({ data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["listings", client.id] });
-      setListingDialogOpen(false);
-      setEditingListing(null);
-    },
-  });
-
-  const deleteListingMut = useMutation({
-    mutationFn: (id: string) => deleteListingFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["listings", client.id] });
-    },
-  });
-
-  const searches = searchesQuery.data ?? [];
-  const currentSearchListings = useMemo(
-    () =>
-      listingsQuery.data?.filter(
-        (l) => selectedSearchId && l.search_id === selectedSearchId,
-      ) ?? [],
-    [listingsQuery.data, selectedSearchId],
-  );
-
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -427,14 +371,17 @@ function ClientDetail({
         </div>
       </div>
 
-      {/* Client Information */}
       <Card className="border-0 shadow-lg shadow-slate-200/70">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             {client.full_name}
             <Badge
               variant={client.status === "active" ? "default" : "secondary"}
-              className={client.status === "pending_invitation" ? "bg-amber-100 text-amber-800" : ""}
+              className={
+                client.status === "pending_invitation"
+                  ? "bg-amber-100 text-amber-800"
+                  : ""
+              }
             >
               {client.status === "active" ? "Active" : "Pending invitation"}
             </Badge>
@@ -456,151 +403,297 @@ function ClientDetail({
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm text-slate-500">Invited</p>
-              <p className="mt-1 font-medium">{new Date(client.invited_at).toLocaleString()}</p>
+              <p className="mt-1 font-medium">
+                {new Date(client.invited_at).toLocaleString()}
+              </p>
             </div>
           </div>
           {client.status === "pending_invitation" && (
             <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-              An invitation email has been sent. This client will appear as Active once they set
-              their password.
+              An invitation email has been sent. This client will appear as Active
+              once they set their password.
             </p>
           )}
         </CardContent>
       </Card>
 
-      {/* Searches Section */}
+      <PropertiesPanel clientId={client.id} />
+    </main>
+  );
+}
+
+/* ------------------------ CLIENT VIEW ------------------------ */
+
+function ClientView({ ctx }: { ctx: any }) {
+  const { clientRecord, agent, profile } = ctx;
+
+  return (
+    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
       <Card className="border-0 shadow-lg shadow-slate-200/70">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Property Searches</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">Organize property searches for this client.</p>
-          </div>
-          <Button className="gap-2" onClick={() => setSearchDialogOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Search
-          </Button>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <UserCircle2 className="h-6 w-6" />
+            Welcome, {profile?.full_name || clientRecord?.full_name || "there"}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {searchesQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Loading searches...</p>
-          ) : searches.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-              <p className="text-slate-600">No searches yet. Create your first search.</p>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-500">Your email</p>
+              <p className="mt-1 font-medium">
+                {profile?.email || clientRecord?.email}
+              </p>
             </div>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {searches.map((search) => (
-                <button
-                  key={search.id}
-                  onClick={() => setSelectedSearchId(search.id)}
-                  className={`rounded-xl border-2 p-4 text-left transition ${
-                    selectedSearchId === search.id
-                      ? "border-cyan-500 bg-cyan-50"
-                      : "border-slate-200 hover:border-cyan-300"
-                  }`}
-                >
-                  <p className="font-semibold text-slate-900">{search.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {search.listings_aggregate?.count ?? 0} listings
-                  </p>
-                </button>
-              ))}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-500">Phone</p>
+              <p className="mt-1 font-medium">
+                {profile?.phone || clientRecord?.phone || "—"}
+              </p>
+            </div>
+          </div>
+
+          {agent && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-semibold text-slate-900">Your agent</p>
+              <p className="mt-1 text-slate-700">{agent.full_name || agent.email}</p>
+              <p className="text-sm text-slate-500">{agent.email}</p>
+              {agent.phone && (
+                <p className="text-sm text-slate-500">{agent.phone}</p>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Listings Section */}
-      {selectedSearchId && (
+      {clientRecord?.id ? (
+        <PropertiesPanel clientId={clientRecord.id} />
+      ) : (
         <Card className="border-0 shadow-lg shadow-slate-200/70">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Listings</CardTitle>
-              <p className="mt-1 text-sm text-slate-500">
-                {searches.find((s) => s.id === selectedSearchId)?.name}
-              </p>
-            </div>
-            <Button className="gap-2" onClick={() => setListingDialogOpen(true)}>
-              <Plus className="h-4 w-4" /> Add Listing
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <ListingsTableView
-              listings={currentSearchListings}
-              onEdit={(listing) => {
-                setEditingListing(listing);
-                setListingDialogOpen(true);
-              }}
-              onDelete={(id) => {
-                if (confirm("Delete this listing?")) {
-                  deleteListingMut.mutate(id);
-                }
-              }}
-              onSelectListing={(listing) => {
-                navigate({ to: `/listings/${listing.id}` });
-              }}
-              isLoading={listingsQuery.isLoading}
-            />
+          <CardContent className="py-8 text-center text-slate-500">
+            No client record linked to your account.
           </CardContent>
         </Card>
       )}
-
-      {/* Search Dialog */}
-      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Search</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="mb-1 text-sm font-medium text-slate-700">Search Name *</p>
-              <Input
-                placeholder="e.g., Downtown Condos, Family Homes"
-                value={newSearchName}
-                onChange={(e) => setNewSearchName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setSearchDialogOpen(false)}
-              disabled={createSearchMut.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => createSearchMut.mutate(newSearchName)}
-              disabled={!newSearchName.trim() || createSearchMut.isPending}
-            >
-              Create Search
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Listing Dialog */}
-      <ListingFormDialog
-        open={listingDialogOpen}
-        onOpenChange={setListingDialogOpen}
-        searchId={selectedSearchId || ""}
-        editing={editingListing}
-        onSubmit={async (data) => {
-          if (editingListing) {
-            await updateListingMut.mutateAsync(data);
-          } else {
-            await createListingMut.mutateAsync(data);
-          }
-        }}
-        isSubmitting={createListingMut.isPending || updateListingMut.isPending}
-        error={
-          (createListingMut.error as Error | null)?.message ||
-          (updateListingMut.error as Error | null)?.message ||
-          null
-        }
-      />
     </main>
   );
 }
+
+/* ------------------------ PROPERTIES ------------------------ */
+
+function PropertiesPanel({ clientId }: { clientId: string }) {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listProperties);
+  const createFn = useServerFn(createProperty);
+  const updateFn = useServerFn(updateProperty);
+  const deleteFn = useServerFn(deleteProperty);
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PropertyRow | null>(null);
+
+  const query = useQuery({
+    queryKey: ["properties", clientId],
+    queryFn: () =>
+      listFn({ data: { client_id: clientId } }) as Promise<PropertyRow[]>,
+  });
+
+  const createMut = useMutation({
+    mutationFn: (values: PropertyFormValues) =>
+      createFn({ data: { client_id: clientId, ...values } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties", clientId] });
+      setOpen(false);
+      setEditing(null);
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (payload: { id: string; values: PropertyFormValues }) =>
+      updateFn({ data: { id: payload.id, ...payload.values } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties", clientId] });
+      setOpen(false);
+      setEditing(null);
+    },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["properties", clientId] }),
+  });
+
+  const properties = query.data ?? [];
+
+  return (
+    <Card className="border-0 shadow-lg shadow-slate-200/70">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Properties</CardTitle>
+          <p className="mt-1 text-sm text-slate-500">
+            Manually added properties for this client.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{properties.length} total</Badge>
+          <Button
+            className="gap-2"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Add property
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {query.isLoading ? (
+          <p className="text-sm text-slate-500">Loading properties…</p>
+        ) : properties.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+            <p className="text-slate-600">
+              No properties yet. Add the first one to get started.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {properties.map((p) => (
+              <PropertyCard
+                key={p.id}
+                property={p}
+                onEdit={() => {
+                  setEditing(p);
+                  setOpen(true);
+                }}
+                onDelete={() => {
+                  if (confirm(`Delete ${p.address}?`)) deleteMut.mutate(p.id);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <PropertyFormDialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditing(null);
+        }}
+        editing={editing}
+        onSubmit={async (values) => {
+          if (editing) await updateMut.mutateAsync({ id: editing.id, values });
+          else await createMut.mutateAsync(values);
+        }}
+        submitting={createMut.isPending || updateMut.isPending}
+        error={
+          (createMut.error as Error | null)?.message ||
+          (updateMut.error as Error | null)?.message ||
+          null
+        }
+      />
+    </Card>
+  );
+}
+
+function PropertyCard({
+  property,
+  onEdit,
+  onDelete,
+}: {
+  property: PropertyRow;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const price = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(property.price || 0);
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="relative aspect-video w-full bg-slate-100">
+        {property.photo_url ? (
+          <img
+            src={property.photo_url}
+            alt={property.address}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-400">
+            <ImageIcon className="h-8 w-8" />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-semibold text-slate-900">{property.address}</p>
+            <p className="flex items-center gap-1 text-sm text-slate-500">
+              <MapPin className="h-3.5 w-3.5" />
+              {property.city}, {property.state} {property.zip_code}
+            </p>
+          </div>
+          <p className="text-lg font-bold text-slate-900">{price}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+          <span>{property.bedrooms} bd</span>
+          <span>{property.bathrooms} ba</span>
+          <span>{property.square_feet.toLocaleString()} sqft</span>
+          {property.lot_size != null && <span>{property.lot_size} lot</span>}
+          {property.year_built != null && <span>Built {property.year_built}</span>}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary">{property.property_type}</Badge>
+          <Badge variant="outline">{property.listing_status}</Badge>
+          <Badge className="bg-cyan-100 text-cyan-800">{property.client_status}</Badge>
+        </div>
+
+        {property.notes && (
+          <p className="line-clamp-3 text-sm text-slate-600">{property.notes}</p>
+        )}
+
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <span>Last updated {new Date(property.updated_at).toLocaleString()}</span>
+          <div className="flex items-center gap-1">
+            {property.url && (
+              <a
+                href={property.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                title="Open listing"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              title="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-md p-1.5 text-red-500 hover:bg-red-50"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------ CLIENT FORM ------------------------ */
 
 function ClientFormDialog({
   open,
@@ -637,7 +730,8 @@ function ClientFormDialog({
     const em = email.trim();
     if (!name) return setLocalError("Full name is required.");
     if (!em) return setLocalError("Email is required.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setLocalError("Please enter a valid email address.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
+      return setLocalError("Please enter a valid email address.");
     onSubmit({ full_name: name, email: em, phone: phone.trim() });
   };
 
@@ -660,7 +754,9 @@ function ClientFormDialog({
             <p className="mb-1 text-sm font-medium text-slate-700">Phone number</p>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
           </div>
-          {(localError || error) && <p className="text-sm text-red-600">{localError || error}</p>}
+          {(localError || error) && (
+            <p className="text-sm text-red-600">{localError || error}</p>
+          )}
           {!editing && (
             <p className="text-xs text-slate-500">
               An invitation email will be sent so this client can set their password.
@@ -677,236 +773,5 @@ function ClientFormDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/* ------------------------ CLIENT VIEW ------------------------ */
-
-function ClientView({ ctx }: { ctx: any }) {
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-  const { clientRecord, agent, profile } = ctx;
-
-  const listSearchesFn = useServerFn(listSearches);
-  const createSearchFn = useServerFn(createSearch);
-  const deleteSearchFn = useServerFn(deleteSearch);
-  const listListingsFn = useServerFn(listListings);
-  const createListingFn = useServerFn(createListing);
-  const deleteListingFn = useServerFn(deleteListing);
-
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
-  const [listingDialogOpen, setListingDialogOpen] = useState(false);
-  const [editingListing, setEditingListing] = useState<any>(null);
-  const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null);
-  const [newSearchName, setNewSearchName] = useState("");
-
-  const searchesQuery = useQuery({
-    queryKey: ["searches", clientRecord?.id],
-    queryFn: () => listSearchesFn() as Promise<any[]>,
-    enabled: !!clientRecord?.id,
-  });
-
-  const listingsQuery = useQuery({
-    queryKey: ["listings", clientRecord?.id],
-    queryFn: () => listListingsFn() as Promise<any[]>,
-    enabled: !!clientRecord?.id,
-  });
-
-  const createSearchMut = useMutation({
-    mutationFn: (name: string) =>
-      createSearchFn({ data: { client_id: clientRecord?.id, name } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["searches", clientRecord?.id] });
-      setSearchDialogOpen(false);
-      setNewSearchName("");
-    },
-  });
-
-  const createListingMut = useMutation({
-    mutationFn: (data: any) => createListingFn({ data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["listings", clientRecord?.id] });
-      setListingDialogOpen(false);
-      setEditingListing(null);
-    },
-  });
-
-  const deleteListingMut = useMutation({
-    mutationFn: (id: string) => deleteListingFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["listings", clientRecord?.id] });
-    },
-  });
-
-  const searches = searchesQuery.data ?? [];
-  const currentSearchListings = useMemo(
-    () =>
-      listingsQuery.data?.filter(
-        (l) => selectedSearchId && l.search_id === selectedSearchId,
-      ) ?? [],
-    [listingsQuery.data, selectedSearchId],
-  );
-
-  return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
-      {/* Welcome Card */}
-      <Card className="border-0 shadow-lg shadow-slate-200/70">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <UserCircle2 className="h-6 w-6" />
-            Welcome, {profile?.full_name || clientRecord?.full_name || "there"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Your email</p>
-              <p className="mt-1 font-medium">{profile?.email || clientRecord?.email}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Phone</p>
-              <p className="mt-1 font-medium">{profile?.phone || clientRecord?.phone || "—"}</p>
-            </div>
-          </div>
-
-          {agent && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-sm font-semibold text-slate-900">Your agent</p>
-              <p className="mt-1 text-slate-700">{agent.full_name || agent.email}</p>
-              <p className="text-sm text-slate-500">{agent.email}</p>
-              {agent.phone && <p className="text-sm text-slate-500">{agent.phone}</p>}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Searches Section */}
-      <Card className="border-0 shadow-lg shadow-slate-200/70">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Your Property Searches</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">Organize your property searches and favorites.</p>
-          </div>
-          <Button className="gap-2" onClick={() => setSearchDialogOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Search
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {searchesQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Loading searches...</p>
-          ) : searches.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-              <p className="text-slate-600">No searches yet. Create your first search.</p>
-              <Button className="mt-4 gap-2" onClick={() => setSearchDialogOpen(true)}>
-                <Plus className="h-4 w-4" /> Add Search
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {searches.map((search) => (
-                <button
-                  key={search.id}
-                  onClick={() => setSelectedSearchId(search.id)}
-                  className={`rounded-xl border-2 p-4 text-left transition ${
-                    selectedSearchId === search.id
-                      ? "border-cyan-500 bg-cyan-50"
-                      : "border-slate-200 hover:border-cyan-300"
-                  }`}
-                >
-                  <p className="font-semibold text-slate-900">{search.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {search.listings_aggregate?.count ?? 0} listings
-                  </p>
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Listings Section */}
-      {selectedSearchId && (
-        <Card className="border-0 shadow-lg shadow-slate-200/70">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Listings</CardTitle>
-              <p className="mt-1 text-sm text-slate-500">
-                {searches.find((s) => s.id === selectedSearchId)?.name}
-              </p>
-            </div>
-            <Button className="gap-2" onClick={() => setListingDialogOpen(true)}>
-              <Plus className="h-4 w-4" /> Add Listing
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <ListingsTableView
-              listings={currentSearchListings}
-              onEdit={(listing) => {
-                setEditingListing(listing);
-                setListingDialogOpen(true);
-              }}
-              onDelete={(id) => {
-                if (confirm("Delete this listing?")) {
-                  deleteListingMut.mutate(id);
-                }
-              }}
-              onSelectListing={(listing) => {
-                navigate({ to: `/listings/${listing.id}` });
-              }}
-              isLoading={listingsQuery.isLoading}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Search Dialog */}
-      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Search</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="mb-1 text-sm font-medium text-slate-700">Search Name *</p>
-              <Input
-                placeholder="e.g., Downtown Condos, Family Homes"
-                value={newSearchName}
-                onChange={(e) => setNewSearchName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setSearchDialogOpen(false)}
-              disabled={createSearchMut.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => createSearchMut.mutate(newSearchName)}
-              disabled={!newSearchName.trim() || createSearchMut.isPending}
-            >
-              Create Search
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Listing Dialog */}
-      <ListingFormDialog
-        open={listingDialogOpen}
-        onOpenChange={setListingDialogOpen}
-        searchId={selectedSearchId || ""}
-        editing={editingListing}
-        onSubmit={async (data) => {
-          await createListingMut.mutateAsync(data);
-        }}
-        isSubmitting={createListingMut.isPending}
-        error={
-          (createListingMut.error as Error | null)?.message || null
-        }
-      />
-    </main>
   );
 }
