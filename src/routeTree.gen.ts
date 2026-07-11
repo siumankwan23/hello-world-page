@@ -14,6 +14,8 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedListingsRouteRouteImport } from './routes/_authenticated/listings/route'
+import { Route as AuthenticatedListingsListingIdRouteImport } from './routes/_authenticated/listings/$listingId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,18 +41,34 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedListingsRouteRoute =
+  AuthenticatedListingsRouteRouteImport.update({
+    id: '/listings',
+    path: '/listings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedListingsListingIdRoute =
+  AuthenticatedListingsListingIdRouteImport.update({
+    id: '/$listingId',
+    path: '/$listingId',
+    getParentRoute: () => AuthenticatedListingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/auth': typeof AuthRoute
+  '/listings': typeof AuthenticatedListingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/auth': typeof AuthRoute
+  '/listings': typeof AuthenticatedListingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +76,36 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/accept-invite': typeof AcceptInviteRoute
   '/auth': typeof AuthRoute
+  '/_authenticated/listings': typeof AuthenticatedListingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/accept-invite' | '/auth' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/accept-invite'
+    | '/auth'
+    | '/listings'
+    | '/dashboard'
+    | '/listings/$listingId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/accept-invite' | '/auth' | '/dashboard'
+  to:
+    | '/'
+    | '/accept-invite'
+    | '/auth'
+    | '/listings'
+    | '/dashboard'
+    | '/listings/$listingId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/accept-invite'
     | '/auth'
+    | '/_authenticated/listings'
     | '/_authenticated/dashboard'
+    | '/_authenticated/listings/$listingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,14 +152,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/listings': {
+      id: '/_authenticated/listings'
+      path: '/listings'
+      fullPath: '/listings'
+      preLoaderRoute: typeof AuthenticatedListingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/listings/$listingId': {
+      id: '/_authenticated/listings/$listingId'
+      path: '/$listingId'
+      fullPath: '/listings/$listingId'
+      preLoaderRoute: typeof AuthenticatedListingsListingIdRouteImport
+      parentRoute: typeof AuthenticatedListingsRouteRoute
+    }
   }
 }
 
+interface AuthenticatedListingsRouteRouteChildren {
+  AuthenticatedListingsListingIdRoute: typeof AuthenticatedListingsListingIdRoute
+}
+
+const AuthenticatedListingsRouteRouteChildren: AuthenticatedListingsRouteRouteChildren =
+  {
+    AuthenticatedListingsListingIdRoute: AuthenticatedListingsListingIdRoute,
+  }
+
+const AuthenticatedListingsRouteRouteWithChildren =
+  AuthenticatedListingsRouteRoute._addFileChildren(
+    AuthenticatedListingsRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedListingsRouteRoute: typeof AuthenticatedListingsRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedListingsRouteRoute: AuthenticatedListingsRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
 }
 
