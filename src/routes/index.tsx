@@ -9,7 +9,11 @@ import { Home, ShieldCheck, Sparkles, ArrowRight, Users, KeyRound } from "lucide
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
+<<<<<<< HEAD
       { title: "123Northstar Realty" },
+=======
+      { title: "1139Northstar Realty" },
+>>>>>>> master
       { name: "description", content: "A secure real estate agent and client management platform." },
     ],
   }),
