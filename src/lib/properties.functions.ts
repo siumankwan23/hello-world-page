@@ -33,6 +33,13 @@ const clientStatuses = [
   "Closed",
 ] as const;
 
+const requiredUrl = z
+  .string()
+  .trim()
+  .min(1, "Listing URL is required")
+  .max(2048)
+  .url("Must be a valid URL");
+
 const optionalUrl = z
   .string()
   .trim()
@@ -43,7 +50,7 @@ const optionalUrl = z
 
 const baseFields = {
   photo_url: optionalUrl,
-  url: optionalUrl,
+  url: requiredUrl,
   address: z.string().trim().min(1, "Address is required").max(255),
   city: z.string().trim().min(1, "City is required").max(100),
   state: z.string().trim().min(1, "State is required").max(50),

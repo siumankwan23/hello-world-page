@@ -125,6 +125,7 @@ export function PropertyFormDialog({
     if (!form.city.trim()) return setLocal("City is required.");
     if (!form.state.trim()) return setLocal("State is required.");
     if (!form.zip_code.trim()) return setLocal("ZIP code is required.");
+    if (!form.url.trim()) return setLocal("Listing URL is required.");
     try {
       await onSubmit(form);
     } catch (e) {
@@ -150,7 +151,7 @@ export function PropertyFormDialog({
           </div>
 
           <div>
-            <Label>URL</Label>
+            <Label>URL *</Label>
             <Input
               value={form.url}
               onChange={(e) => set("url", e.target.value)}

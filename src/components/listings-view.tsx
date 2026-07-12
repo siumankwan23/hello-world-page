@@ -322,9 +322,20 @@ export function ListingsCardView({
                 </div>
 
                 <div
-                  className="flex gap-2"
+                  className="flex flex-wrap gap-2"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  {listing.url ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => window.open(listing.url, "_blank", "noopener,noreferrer")}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open listing
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     size="sm"
