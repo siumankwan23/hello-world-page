@@ -240,16 +240,34 @@ function AgentView() {
 
   if (selected) {
     return (
-      <ClientDetail
-        client={selected}
-        onBack={() => setSelectedId(null)}
-        onEdit={() => openEdit(selected)}
-        onDelete={() => {
-          if (confirm(`Delete ${selected.full_name}?`)) deleteMut.mutate(selected.id);
-        }}
-      />
+      <>
+        <ClientDetail
+          client={selected}
+          onBack={() => setSelectedId(null)}
+          onEdit={() => openEdit(selected)}
+          onDelete={() => {
+            if (confirm(`Delete ${selected.full_name}?`)) deleteMut.mutate(selected.id);
+          }}
+        />
+        <ClientFormDialog
+          open={dialogOpen}
+          onOpenChange={(o) => {
+            setDialogOpen(o);
+            if (!o) setEditing(null);
+          }}
+          editing={editing}
+          onSubmit={handleSubmit}
+          submitting={createMut.isPending || updateMut.isPending}
+          error={
+            (createMut.error as Error | null)?.message ||
+            (updateMut.error as Error | null)?.message ||
+            null
+          }
+        />
+      </>
     );
   }
+
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
