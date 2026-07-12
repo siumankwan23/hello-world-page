@@ -20,6 +20,8 @@ import {
   PropertyFormDialog,
   type PropertyFormValues,
 } from "@/components/property-form-dialog";
+import { ListingsCardView } from "@/components/listings-view";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -547,32 +549,50 @@ function PropertiesPanel({ clientId }: { clientId: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        {query.isLoading ? (
-          <p className="text-sm text-slate-500">Loading properties…</p>
-        ) : properties.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-            <p className="text-slate-600">
-              No properties yet. Add the first one to get started.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {properties.map((p) => (
-              <PropertyCard
-                key={p.id}
-                property={p}
-                onEdit={() => {
-                  setEditing(p);
-                  setOpen(true);
-                }}
-                onDelete={() => {
-                  if (confirm(`Delete ${p.address}?`)) deleteMut.mutate(p.id);
-                }}
-              />
-            ))}
-          </div>
-        )}
+        <ListingsCardView
+          isLoading={query.isLoading}
+          listings={properties.map((p) => ({
+            id: p.id,
+            mls_number: null,
+            address: p.address,
+            city: p.city,
+            state: p.state,
+            zip_code: p.zip_code,
+            price: p.price,
+            bedrooms: p.bedrooms,
+            bathrooms: p.bathrooms,
+            square_feet: p.square_feet,
+            lot_size: p.lot_size,
+            property_type: p.property_type,
+            year_built: p.year_built,
+            listing_status: p.listing_status,
+            client_status: p.client_status,
+            notes: p.notes,
+            photos: p.photo_url ? [p.photo_url] : [],
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+          }))}
+          onEdit={(l) => {
+            const p = properties.find((x) => x.id === l.id);
+            if (p) {
+              setEditing(p);
+              setOpen(true);
+            }
+          }}
+          onDelete={(id) => {
+            const p = properties.find((x) => x.id === id);
+            if (p && confirm(`Delete ${p.address}?`)) deleteMut.mutate(id);
+          }}
+          onSelectListing={(l) => {
+            const p = properties.find((x) => x.id === l.id);
+            if (p) {
+              setEditing(p);
+              setOpen(true);
+            }
+          }}
+        />
       </CardContent>
+
 
       <PropertyFormDialog
         open={open}
