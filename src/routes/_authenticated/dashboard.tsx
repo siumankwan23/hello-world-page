@@ -705,36 +705,43 @@ function PropertyCard({
           <p className="line-clamp-3 text-sm text-slate-600">{property.notes}</p>
         )}
 
-        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-          <span>Last updated {new Date(property.updated_at).toLocaleString()}</span>
-          <div className="flex items-center gap-1">
-            {property.url && (
-              <a
-                href={property.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                title="Open listing"
+        <div className="mt-auto flex flex-col gap-3 border-t border-slate-100 pt-3">
+          <span className="text-xs text-slate-500">
+            Last updated {new Date(property.updated_at).toLocaleString()}
+          </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {property.url ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => window.open(property.url!, "_blank", "noopener,noreferrer")}
               >
                 <ExternalLink className="h-4 w-4" />
-              </a>
+                Open listing
+              </Button>
+            ) : (
+              <span className="text-sm text-slate-400">No saved URL</span>
             )}
-            <button
-              type="button"
-              onClick={onEdit}
-              className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              title="Edit"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-md p-1.5 text-red-500 hover:bg-red-50"
-              title="Delete"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onEdit}
+                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                title="Edit"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="rounded-md p-1.5 text-red-500 hover:bg-red-50"
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
