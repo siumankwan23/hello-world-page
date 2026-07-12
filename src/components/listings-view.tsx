@@ -11,6 +11,7 @@ import {
   Trash2,
   ImageIcon,
   ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +56,7 @@ type Listing = {
   client_status: string;
   notes: string | null;
   photos: string[];
+  url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -325,17 +327,22 @@ export function ListingsCardView({
                   className="flex flex-wrap gap-2"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {listing.url ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => window.open(listing.url, "_blank", "noopener,noreferrer")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Open listing
-                    </Button>
-                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      if (listing.url) {
+                        window.open(listing.url, "_blank");
+                      } else {
+                        alert("Listing URL has not been added yet.");
+                      }
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open listing
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
