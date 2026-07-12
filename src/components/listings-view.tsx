@@ -240,106 +240,110 @@ export function ListingsCardView({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div className="space-y-3">
       {listings.map((listing) => (
         <Card
           key={listing.id}
-          className="overflow-hidden cursor-pointer transition hover:shadow-lg hover:border-cyan-500"
+          className="cursor-pointer overflow-hidden transition hover:border-cyan-500 hover:shadow-md"
           onClick={() => onSelectListing(listing)}
         >
-          {listing.photos && listing.photos.length > 0 ? (
-            <div className="relative h-32 overflow-hidden bg-slate-100">
-              <img
-                src={listing.photos[0]}
-                alt={listing.address}
-                className="h-full w-full object-cover"
-              />
-              {listing.photos.length > 1 && (
-                <Badge className="absolute right-2 top-2 gap-1">
-                  <ImageIcon className="h-3 w-3" />
-                  {listing.photos.length}
-                </Badge>
+          <div className="flex flex-col sm:flex-row">
+            {/* Image */}
+            <div className="relative h-40 w-full sm:h-auto sm:w-40 sm:shrink-0">
+              {listing.photos && listing.photos.length > 0 ? (
+                <>
+                  <img
+                    src={listing.photos[0]}
+                    alt={listing.address}
+                    className="h-full w-full object-cover"
+                  />
+                  {listing.photos.length > 1 && (
+                    <Badge className="absolute right-2 top-2 gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      {listing.photos.length}
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <div className="flex h-full items-center justify-center bg-slate-100">
+                  <ImageIcon className="h-10 w-10 text-slate-300" />
+                </div>
               )}
             </div>
-          ) : (
-            <div className="flex h-48 items-center justify-center bg-slate-100">
-              <ImageIcon className="h-12 w-12 text-slate-300" />
-            </div>
-          )}
 
-          <CardContent className="p-4">
-            <div className="mb-3 space-y-2">
-              <p className="font-semibold text-slate-900">{listing.address}</p>
-              <p className="text-sm text-slate-500">
-                {listing.city}, {listing.state} {listing.zip_code}
-              </p>
-            </div>
-
-            <div className="mb-3 border-t border-slate-200 pt-3">
-              <p className="text-xl font-bold text-slate-900">
-                ${listing.price.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="mb-3 grid grid-cols-3 gap-2 text-center text-sm">
-              <div>
-                <Bed className="mx-auto mb-1 h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">{listing.bedrooms}</span>
+            {/* Content */}
+            <div className="flex flex-1 flex-col justify-between p-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-semibold text-slate-900">{listing.address}</p>
+                  <p className="text-sm text-slate-500">
+                    {listing.city}, {listing.state} {listing.zip_code}
+                  </p>
+                </div>
+                <p className="text-lg font-bold text-slate-900">
+                  ${listing.price.toLocaleString()}
+                </p>
               </div>
-              <div>
-                <Bath className="mx-auto mb-1 h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {listing.bathrooms.toFixed(1)}
+
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                <span className="flex items-center gap-1">
+                  <Bed className="h-4 w-4 text-slate-400" />
+                  {listing.bedrooms} bd
                 </span>
-              </div>
-              <div>
-                <Ruler className="mx-auto mb-1 h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {listing.square_feet.toLocaleString()}
+                <span className="flex items-center gap-1">
+                  <Bath className="h-4 w-4 text-slate-400" />
+                  {listing.bathrooms.toFixed(1)} ba
                 </span>
+                <span className="flex items-center gap-1">
+                  <Ruler className="h-4 w-4 text-slate-400" />
+                  {listing.square_feet.toLocaleString()} sqft
+                </span>
+                {listing.year_built && <span>Built {listing.year_built}</span>}
+                {listing.lot_size && <span>{listing.lot_size} ac lot</span>}
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={
+                      listing.listing_status === "Active"
+                        ? "default"
+                        : listing.listing_status === "Sold"
+                          ? "secondary"
+                          : "outline"
+                    }
+                    className="text-xs"
+                  >
+                    {listing.listing_status}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {listing.client_status}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(listing)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600"
+                    onClick={() => onDelete(listing.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Badge
-                variant={
-                  listing.listing_status === "Active"
-                    ? "default"
-                    : listing.listing_status === "Sold"
-                      ? "secondary"
-                      : "outline"
-                }
-                className="text-xs"
-              >
-                {listing.listing_status}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {listing.client_status}
-              </Badge>
-            </div>
-
-            <div
-              className="flex gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => onEdit(listing)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-red-600"
-                onClick={() => onDelete(listing.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
+          </div>
         </Card>
       ))}
     </div>
