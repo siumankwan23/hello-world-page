@@ -544,6 +544,58 @@ function PropertiesPanel({ clientId }: { clientId: string }) {
 
   const properties = query.data ?? [];
 
+  const statusOrder = [
+    "Interested",
+    "Tour Scheduled",
+    "Toured",
+    "Offer Submitted",
+    "CounterOffer",
+    "CounterOffer Submitted",
+    "Offer Accepted",
+    "Not Interested",
+  ];
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, PropertyRow[]>();
+    for (const p of properties) {
+      const group = map.get(p.client_status) ?? [];
+      group.push(p);
+      map.set(p.client_status, group);
+    }
+    for (const group of map.values()) {
+      group.sort((a, b) => a.address.localeCompare(b.address));
+    }
+    const statuses = Array.from(map.keys()).sort(
+      (a, b) =>
+        (statusOrder.indexOf(a) === -1 ? 999 : statusOrder.indexOf(a)) -
+        (statusOrder.indexOf(b) === -1 ? 999 : statusOrder.indexOf(b)),
+    );
+    return statuses.map((status) => ({ status, items: map.get(status) ?? [] }));
+  }, [properties]);
+
+  const listingFromProperty = (p: PropertyRow) => ({
+    id: p.id,
+    mls_number: null,
+    address: p.address,
+    city: p.city,
+    state: p.state,
+    zip_code: p.zip_code,
+    price: p.price,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    square_feet: p.square_feet,
+    lot_size: p.lot_size,
+    property_type: p.property_type,
+    year_built: p.year_built,
+    listing_status: p.listing_status,
+    client_status: p.client_status,
+    notes: p.notes,
+    photos: p.photo_url ? [p.photo_url] : [],
+    url: p.url,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+  });
+
   return (
     <Card className="border-0 shadow-lg shadow-slate-200/70">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -567,51 +619,50 @@ function PropertiesPanel({ clientId }: { clientId: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        <ListingsCardView
-          isLoading={query.isLoading}
-          listings={properties.map((p) => ({
-            id: p.id,
-            mls_number: null,
-            address: p.address,
-            city: p.city,
-            state: p.state,
-            zip_code: p.zip_code,
-            price: p.price,
-            bedrooms: p.bedrooms,
-            bathrooms: p.bathrooms,
-            square_feet: p.square_feet,
-            lot_size: p.lot_size,
-            property_type: p.property_type,
-            year_built: p.year_built,
-            listing_status: p.listing_status,
-            client_status: p.client_status,
-            notes: p.notes,
-            photos: p.photo_url ? [p.photo_url] : [],
-            url: p.url,
-            created_at: p.created_at,
-            updated_at: p.updated_at,
-          }))}
-          onEdit={(l) => {
-            const p = properties.find((x) => x.id === l.id);
-            if (p) {
-              setEditing(p);
-              setOpen(true);
-            }
-          }}
-          onDelete={(id) => {
-            const p = properties.find((x) => x.id === id);
-            if (p && confirm(`Delete ${p.address}?`)) deleteMut.mutate(id);
-          }}
-          onSelectListing={(l) => {
-            const p = properties.find((x) => x.id === l.id);
-            if (p) {
-              setEditing(p);
-              setOpen(true);
-            }
-          }}
-        />
+        {query.isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <p className="text-slate-500">Loading properties...</p>
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
+            <p className="text-slate-600">
+              No properties yet. Add your first property to get started.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {grouped.map(({ status, items }) => (
+              <div key={status} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-slate-900">{status}</h3>
+                  <Badge variant="outline">{items.length}</Badge>
+                </div>
+                <ListingsCardView
+                  listings={items.map(listingFromProperty)}
+                  onEdit={(l) => {
+                    const p = properties.find((x) => x.id === l.id);
+                    if (p) {
+                      setEditing(p);
+                      setOpen(true);
+                    }
+                  }}
+                  onDelete={(id) => {
+                    const p = properties.find((x) => x.id === id);
+                    if (p && confirm(`Delete ${p.address}?`)) deleteMut.mutate(id);
+                  }}
+                  onSelectListing={(l) => {
+                    const p = properties.find((x) => x.id === l.id);
+                    if (p) {
+                      setEditing(p);
+                      setOpen(true);
+                    }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
-
 
       <PropertyFormDialog
         open={open}
