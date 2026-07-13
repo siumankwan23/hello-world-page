@@ -13,24 +13,18 @@ const propertyTypes = [
 ] as const;
 
 const listingStatuses = [
-  "New",
   "Active",
-  "Pending",
   "Under Contract",
   "Sold",
-  "Withdrawn",
-  "Off Market",
 ] as const;
 
 const clientStatuses = [
-  "Interested",
-  "Favorite",
-  "Schedule Showing",
+  "Applied",
+  "Tour Scheduled",
+  "Toured",
   "Offer Submitted",
   "Offer Accepted",
-  "Not Interested",
-  "Watching",
-  "Closed",
+  "Not Interested"
 ] as const;
 
 const requiredUrl = z
