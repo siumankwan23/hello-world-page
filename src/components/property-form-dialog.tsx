@@ -66,23 +66,17 @@ const propertyTypes = [
   "Other",
 ];
 const listingStatuses = [
-  "New",
   "Active",
-  "Pending",
   "Under Contract",
   "Sold",
-  "Withdrawn",
-  "Off Market",
 ];
 const clientStatuses = [
-  "Interested",
-  "Favorite",
-  "Schedule Showing",
+  "Applied",
+  "Tour Scheduled",
+  "Toured",
   "Offer Submitted",
   "Offer Accepted",
   "Not Interested",
-  "Watching",
-  "Closed",
 ];
 
 export function PropertyFormDialog({
