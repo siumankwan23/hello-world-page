@@ -6,6 +6,8 @@ const updateSchema = z.object({
   full_name: z.string().trim().min(1, "Full name is required").max(120),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   license_number: z.string().trim().max(80).optional().or(z.literal("")),
+  broker_name: z.string().trim().max(120).optional().or(z.literal("")),
+  broker_license_number: z.string().trim().max(80).optional().or(z.literal("")),
 });
 
 export const getMyProfile = createServerFn({ method: "GET" })
@@ -13,7 +15,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email, phone, license_number")
+      .select("id, full_name, email, phone, license_number, broker_name, broker_license_number")
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -30,6 +32,8 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         full_name: data.full_name,
         phone: data.phone || null,
         license_number: data.license_number || null,
+        broker_name: data.broker_name || null,
+        broker_license_number: data.broker_license_number || null,
       })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);

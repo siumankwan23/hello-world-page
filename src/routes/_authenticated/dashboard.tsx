@@ -491,6 +491,16 @@ function ClientView({ ctx }: { ctx: any }) {
                   License #: {agent.license_number}
                 </p>
               )}
+              {agent.broker_name && (
+                <p className="text-sm text-slate-500">
+                  Broker: {agent.broker_name}
+                </p>
+              )}
+              {agent.broker_license_number && (
+                <p className="text-sm text-slate-500">
+                  Broker license #: {agent.broker_license_number}
+                </p>
+              )}
             </div>
           )}
         </CardContent>

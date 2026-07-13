@@ -34,20 +34,29 @@ function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
+  const [brokerName, setBrokerName] = useState("");
+  const [brokerLicenseNumber, setBrokerLicenseNumber] = useState("");
 
   useEffect(() => {
     if (profileQuery.data) {
       setFullName(profileQuery.data.full_name ?? "");
       setPhone(profileQuery.data.phone ?? "");
       setLicenseNumber(profileQuery.data.license_number ?? "");
+      setBrokerName(profileQuery.data.broker_name ?? "");
+      setBrokerLicenseNumber(profileQuery.data.broker_license_number ?? "");
     }
   }, [profileQuery.data]);
 
   const isAgent = ctxQuery.data?.role === "agent";
 
   const mut = useMutation({
-    mutationFn: (data: { full_name: string; phone: string; license_number: string }) =>
-      update({ data }),
+    mutationFn: (data: {
+      full_name: string;
+      phone: string;
+      license_number: string;
+      broker_name: string;
+      broker_license_number: string;
+    }) => update({ data }),
     onSuccess: () => {
       toast.success("Profile updated");
       qc.invalidateQueries({ queryKey: ["my-profile"] });
@@ -62,6 +71,8 @@ function ProfilePage() {
       full_name: fullName,
       phone,
       license_number: isAgent ? licenseNumber : "",
+      broker_name: isAgent ? brokerName : "",
+      broker_license_number: isAgent ? brokerLicenseNumber : "",
     });
   };
 
@@ -119,18 +130,44 @@ function ProfilePage() {
               </div>
 
               {isAgent && (
-                <div>
-                  <Label htmlFor="license">License number</Label>
-                  <Input
-                    id="license"
-                    value={licenseNumber}
-                    onChange={(e) => setLicenseNumber(e.target.value)}
-                    placeholder="e.g. RE-123456"
-                  />
-                  <p className="mt-1 text-xs text-slate-500">
-                    Shown to your clients on their dashboard.
-                  </p>
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="license">License number</Label>
+                    <Input
+                      id="license"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      placeholder="e.g. RE-123456"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Shown to your clients on their dashboard.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="brokerName">Broker name</Label>
+                    <Input
+                      id="brokerName"
+                      value={brokerName}
+                      onChange={(e) => setBrokerName(e.target.value)}
+                      placeholder="e.g. Northstar Realty Group"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Shown to your clients on their dashboard.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="brokerLicense">Broker license number</Label>
+                    <Input
+                      id="brokerLicense"
+                      value={brokerLicenseNumber}
+                      onChange={(e) => setBrokerLicenseNumber(e.target.value)}
+                      placeholder="e.g. BR-789012"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Shown to your clients on their dashboard.
+                    </p>
+                  </div>
+                </>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
