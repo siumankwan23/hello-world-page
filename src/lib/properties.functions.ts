@@ -24,7 +24,7 @@ const clientStatuses = [
   "Toured",
   "Offer Submitted",
   "Offer Accepted",
-  "Not Interested"
+  "Not Interested",
 ] as const;
 
 const requiredUrl = z
