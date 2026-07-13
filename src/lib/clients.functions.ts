@@ -280,7 +280,7 @@ export const getMyContext = createServerFn({ method: "GET" })
 
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email, phone")
+      .select("id, full_name, email, phone, license_number")
       .eq("id", context.userId)
       .maybeSingle();
 
@@ -296,7 +296,7 @@ export const getMyContext = createServerFn({ method: "GET" })
       if (c) {
         const { data: agentProfile } = await context.supabase
           .from("profiles")
-          .select("id, full_name, email, phone")
+          .select("id, full_name, email, phone, license_number")
           .eq("id", c.agent_id)
           .maybeSingle();
         agent = agentProfile;

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +48,7 @@ import {
   MapPin,
   ExternalLink,
   ImageIcon,
+  User,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -144,6 +145,11 @@ function DashboardPage() {
                 {ctx.profile.full_name}
               </span>
             )}
+            <Button variant="outline" className="gap-2" asChild>
+              <Link to="/profile">
+                <User className="h-4 w-4" /> Profile
+              </Link>
+            </Button>
             <Button variant="outline" className="gap-2" onClick={handleSignOut}>
               <LogOut className="h-4 w-4" /> Sign out
             </Button>
@@ -479,6 +485,11 @@ function ClientView({ ctx }: { ctx: any }) {
               <p className="text-sm text-slate-500">{agent.email}</p>
               {agent.phone && (
                 <p className="text-sm text-slate-500">{agent.phone}</p>
+              )}
+              {agent.license_number && (
+                <p className="text-sm text-slate-500">
+                  License #: {agent.license_number}
+                </p>
               )}
             </div>
           )}
