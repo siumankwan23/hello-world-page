@@ -587,6 +587,7 @@ function PropertiesPanel({ clientId }: { clientId: string }) {
             client_status: p.client_status,
             notes: p.notes,
             photos: p.photo_url ? [p.photo_url] : [],
+            url: p.url,
             created_at: p.created_at,
             updated_at: p.updated_at,
           }))}
