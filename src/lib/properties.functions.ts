@@ -19,10 +19,12 @@ const listingStatuses = [
 ] as const;
 
 const clientStatuses = [
-  "Applied",
+  "Interested",
   "Tour Scheduled",
   "Toured",
   "Offer Submitted",
+  "CounterOffer",
+  "CounterOffer Submitted",
   "Offer Accepted",
   "Not Interested",
 ] as const;
