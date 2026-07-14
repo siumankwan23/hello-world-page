@@ -58,8 +58,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          broker_license_number: string | null
-          broker_name: string | null
           created_at: string
           email: string
           full_name: string
@@ -69,8 +67,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          broker_license_number?: string | null
-          broker_name?: string | null
           created_at?: string
           email: string
           full_name?: string
@@ -80,8 +76,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          broker_license_number?: string | null
-          broker_name?: string | null
           created_at?: string
           email?: string
           full_name?: string
