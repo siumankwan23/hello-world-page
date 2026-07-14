@@ -147,7 +147,7 @@ export function PropertyFormDialog({
           </div>
 
           <div>
-            <Label>URL *</Label>
+            <Label>URL to provide more detail *</Label>
             <Input
               value={form.url}
               onChange={(e) => set("url", e.target.value)}

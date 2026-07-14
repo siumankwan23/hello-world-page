@@ -60,8 +60,8 @@ const baseFields = {
   year_built: z
     .number()
     .int()
-    .min(1800)
-    .max(new Date().getFullYear() + 1)
+    .min(1700)
+    .max(2060)
     .nullable()
     .optional(),
   listing_status: z.enum(listingStatuses),
